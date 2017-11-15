@@ -314,11 +314,7 @@ void displaySolution() {
 
 // Method to display fifth screen (contrast adjustment screen)
 void adjustContrast() {
-  lcd.clear();
-  lcd.setCursor(0,0);
-  lcd.print("Adj. contrast w/");
-  lcd.setCursor(0,1);
-  lcd.print("left/right btns");
+  printContrast();
   while (true) {
     delay(100); // This delay is oddly needed to make this work
     // If both buttons pressed at same time, break to go back to beginning
@@ -329,14 +325,29 @@ void adjustContrast() {
     // Pressing the left button will decrease the contrast
     if(leftReleased){
       resetFlags();
-      contrast += 5;
+      if(contrast > 0){
+        contrast -= 5;
+      }
       analogWrite(vzero, contrast);
+      printContrast();
     }
     // Pressing the right button will increase the contrast
     else if(rightReleased){
       resetFlags();
-      contrast -= 5;
+      if(contrast < 255){
+        contrast += 5;
+      }
       analogWrite(vzero, contrast);
+      printContrast();
     }
   }
+}
+
+void printContrast() {
+  lcd.clear();
+  lcd.setCursor(0,0);
+  lcd.print("Contrast: ");
+  lcd.print(contrast);
+  lcd.setCursor(0,1);
+  lcd.print("Adj. w/ btns");
 }
