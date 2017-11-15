@@ -329,13 +329,13 @@ void adjustContrast() {
     // Pressing the left button will decrease the contrast
     if(leftReleased){
       resetFlags();
-      contrast -= 5;
+      contrast += 5;
       analogWrite(vzero, contrast);
     }
     // Pressing the right button will increase the contrast
     else if(rightReleased){
       resetFlags();
-      contrast += 5;
+      contrast -= 5;
       analogWrite(vzero, contrast);
     }
   }
