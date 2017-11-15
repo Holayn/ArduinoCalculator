@@ -37,9 +37,9 @@ void setup() {
   // Setup buttons
   pinMode(leftbut,INPUT);
   pinMode(rightbut,INPUT);
-  // Attach an interrupt to the ISR vector
-  attachInterrupt(0, pin_leftbut_ISR, CHANGE); // register state change from pressed to notpressed
-  attachInterrupt(1, pin_rightbut_ISR, CHANGE);
+  // Attach interrupts to the ISR vector
+  attachInterrupt(0, pin_leftbut_ISR, CHANGE); // issue interrrupt on state change
+  attachInterrupt(1, pin_rightbut_ISR, CHANGE); // issue interrupt on state change
 }
 
 void loop() {
@@ -58,7 +58,6 @@ void loop() {
 // Interrupt for left button press on button state rising
 void pin_leftbut_ISR() {
   Serial.print("Left button interrupt");
-  delay(300); // Introducing a little latency to better improve feel
   leftButtonState = digitalRead(leftbut);
   if(leftButtonState == HIGH){
     leftPressed = true;
@@ -83,7 +82,6 @@ void pin_leftbut_ISR() {
 // Interrupt for right button press on button state rising
 void pin_rightbut_ISR() {
   Serial.print("Right button interrupt");
-  delay(300); // Introducing a little latency to better improve feel
   rightButtonState = digitalRead(rightbut);
   if(rightButtonState == HIGH){
     rightPressed = true;
@@ -120,6 +118,7 @@ int binToDec(char byteString[]) {
 }
 
 // Converts a decimal number to a passed char[] byte string
+// by dividing decimal number by binary place weight values
 void decToBin(int dec, char byteString[]) {
   int ptr = 0;
   // Check for overflow
@@ -128,7 +127,6 @@ void decToBin(int dec, char byteString[]) {
     dec -= 256;
   }
   ptr++;
-  // Perform decimal to binary conversion
   if(dec / 128 == 1){
     byteString[ptr] = '1';
     dec -= 128;
@@ -171,6 +169,8 @@ void decToBin(int dec, char byteString[]) {
 }
 
 // Method dedicated to resetting the booleans used for button press detection
+// Resets buttons to their 'default' state typically after a button press is registered
+// Implemented for cleaner-looking code, even if it might introduce some redundancies
 void resetFlags() {
   leftPressed = false;
   rightPressed = false;
@@ -213,31 +213,29 @@ void byteOneInput() {
     // Right button moves to the next bit until reaching the lowest order bit, which will break to go to the next screen
     // Have flashing cursor
     if(leftReleased) { 
-      lcd.noBlink();
+      resetFlags();
       if(byteDisplay[ctr] == '0'){
         byteDisplay[ctr] = '1';
       }
       else{
         byteDisplay[ctr] = '0';
       }
-      // Reprint
+      // Reprint the byte
       lcd.setCursor(0,1);
       lcd.print(byteDisplay);
-      leftReleased = false;
       lcd.setCursor(ctr,1);
-      lcd.blink();
     }
     if(rightReleased) {
-      rightReleased = false;
+      resetFlags();
       // We've reached the end of the byte, so proceed to next screen
       if(ctr == 7){
+        // Convert the char array representing the byte to a decimal number
         byteOne = binToDec(byteDisplay);
         break;
       }
       ctr++;
-      // Set the cursor to the appropriate position
+      // Set the blinking cursor to the appropriate position
       lcd.setCursor(ctr,1);
-      lcd.blink();
     }
     // Pressing both buttons does nothing
     if(bothPressed){
@@ -257,37 +255,33 @@ void byteTwoInput() {
   lcd.setCursor(0,1);
   lcd.blink(); // Provide a blinking cursor for the current bit being edited
   while (true) {
+    delay(100); // This delay is oddly needed to make this work
     // Left button press flips bit value
     // Right button moves to the next bit until reaching the lowest order bit, which will break to go to the next screen
     if(leftReleased) { 
-      leftReleased = false;
-      lcd.noBlink();
+      resetFlags();
       if(byteDisplay[ctr] == '0'){
         byteDisplay[ctr] = '1';
       }
       else{
         byteDisplay[ctr] = '0';
       }
-      // Reprint
+      // Reprint the byte
       lcd.setCursor(0,1);
       lcd.print(byteDisplay);
       lcd.setCursor(ctr,1);
-      lcd.blink();
     }
     if(rightReleased) {
-      rightReleased = false;
+      resetFlags();
       // We've reached the end of the byte, so proceed to next screen
       if(ctr == 7){
         // Convert the char array representing the byte to a decimal number
         byteTwo = binToDec(byteDisplay);
         break;
       }
-      lcd.noBlink();
-      delay(300);
       ctr++;
-      // Set the cursor to the appropriate position
+      // Set the blinking cursor to the appropriate position
       lcd.setCursor(ctr,1);
-      lcd.blink();
     }
     // Pressing both buttons does nothing
     if(bothPressed){
@@ -324,7 +318,7 @@ void adjustContrast() {
   lcd.setCursor(0,0);
   lcd.print("Adj. contrast w/");
   lcd.setCursor(0,1);
-  lcd.print("button presses");
+  lcd.print("left/right btns");
   while (true) {
     delay(100); // This delay is oddly needed to make this work
     // If both buttons pressed at same time, break to go back to beginning
@@ -334,13 +328,13 @@ void adjustContrast() {
     }
     // Pressing the left button will decrease the contrast
     if(leftReleased){
-      leftReleased = false;
+      resetFlags();
       contrast -= 5;
       analogWrite(vzero, contrast);
     }
     // Pressing the right button will increase the contrast
     else if(rightReleased){
-      rightReleased = false;
+      resetFlags();
       contrast += 5;
       analogWrite(vzero, contrast);
     }
